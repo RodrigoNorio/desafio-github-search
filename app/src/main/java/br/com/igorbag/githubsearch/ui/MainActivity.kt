@@ -4,14 +4,23 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.RecyclerView
 import br.com.igorbag.githubsearch.R
 import br.com.igorbag.githubsearch.data.GitHubService
 import br.com.igorbag.githubsearch.domain.Repository
+import br.com.igorbag.githubsearch.ui.adapter.RepositoryAdapter
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,7 +48,14 @@ class MainActivity : AppCompatActivity() {
   private fun setupListeners() {
     btnConfirm.setOnClickListener {
       saveUserLocal()
+      clearFocus(userName)
     }
+  }
+
+  private fun clearFocus(view: View) {
+    view.clearFocus()
+    val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+    imm.hideSoftInputFromWindow(view.getWindowToken(), 0)
   }
   private fun saveUserLocal() {
     val inputName = userName.text.toString()
@@ -57,27 +73,38 @@ class MainActivity : AppCompatActivity() {
     userName.setText(saved_Name)
   }
 
-  //Metodo responsavel por fazer a configuracao base do Retrofit
   fun setupRetrofit() {
-    /*
-       @TODO 5 -  realizar a Configuracao base do retrofit
-       Documentacao oficial do retrofit - https://square.github.io/retrofit/
-       URL_BASE da API do  GitHub= https://api.github.com/
-       lembre-se de utilizar o GsonConverterFactory mostrado no curso
-    */
+    val retrofit = Retrofit.Builder()
+      .baseUrl("https://api.github.com/")
+      .addConverterFactory(GsonConverterFactory.create())
+      .build()
+
+    githubApi = retrofit.create(GitHubService::class.java)
   }
 
-  //Metodo responsavel por buscar todos os repositorios do usuario fornecido
   fun getAllReposByUserName() {
-    // TODO 6 - realizar a implementacao do callback do retrofit e chamar o metodo setupAdapter se retornar os dados com sucesso
+    val userName = userName.text.toString()
+    githubApi.getAllRepositoriesByUser(userName).enqueue(object: Callback<List<Repository>> {
+      override fun onResponse(call: Call<List<Repository>>, response: Response<List<Repository>>) {
+        if(response.isSuccessful) {
+          response.body()?.let {
+            setupAdapter(it)
+          }
+        } else {
+          Toast.makeText(this@MainActivity, "error on connection", Toast.LENGTH_SHORT).show()
+        }
+      }
+
+      override fun onFailure(call: Call<List<Repository>>, t: Throwable) {
+        //emptyState()
+        Toast.makeText(this@MainActivity, "no connection", Toast.LENGTH_SHORT).show()
+      }
+    })
   }
 
-  // Metodo responsavel por realizar a configuracao do adapter
   fun setupAdapter(list: List<Repository>) {
-    /*
-        @TODO 7 - Implementar a configuracao do Adapter , construir o adapter e instancia-lo
-        passando a listagem dos repositorios
-     */
+    val adapter = RepositoryAdapter(list)
+    repoList.adapter = adapter
   }
 
 
