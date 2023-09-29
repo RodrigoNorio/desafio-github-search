@@ -3,4 +3,5 @@
   <string name="user_name">User Name</string>
   <string name="confirm">Confirm</string>
   <string name="saved_name">saved_name</string>
+  <string name="txt_no_connection">No Connection</string>
 </resources>
