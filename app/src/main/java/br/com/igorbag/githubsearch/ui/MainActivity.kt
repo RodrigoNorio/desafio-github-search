@@ -29,12 +29,12 @@ import retrofit2.converter.gson.GsonConverterFactory
 class MainActivity : AppCompatActivity() {
 
   lateinit var userName: EditText
-  lateinit var btnConfirm: Button
   lateinit var repoList: RecyclerView
-  lateinit var githubApi: GitHubService
   lateinit var imgNoConnection: ImageView
   lateinit var txtNoConnection: TextView
   lateinit var progressBar: ProgressBar
+  private lateinit var btnConfirm: Button
+  private lateinit var githubApi: GitHubService
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -47,7 +47,9 @@ class MainActivity : AppCompatActivity() {
 
   override fun onResume() {
     super.onResume()
-    getAllReposByUserName()
+    if(userName.text.toString() != blankString) {
+      getAllReposByUserName()
+    }
   }
 
   private fun setupView() {
@@ -61,7 +63,9 @@ class MainActivity : AppCompatActivity() {
 
   private fun setupListeners() {
     btnConfirm.setOnClickListener {
+      progressBar.isVisible = true
       saveUserLocal()
+      getAllReposByUserName()
       clearFocus(userName)
     }
   }
@@ -108,13 +112,22 @@ class MainActivity : AppCompatActivity() {
             setupAdapter(it)
           }
         } else {
-          Toast.makeText(this@MainActivity, "Something went wrong", Toast.LENGTH_SHORT).show()
+          progressBar.isVisible = false
+          Toast.makeText(
+            this@MainActivity,
+            getString(R.string.txt_dont_find),
+            Toast.LENGTH_SHORT
+          ).show()
         }
       }
 
       override fun onFailure(call: Call<List<Repository>>, t: Throwable) {
         emptyState()
-        Toast.makeText(this@MainActivity, "No connection", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+          this@MainActivity,
+          getString(R.string.txt_no_connection),
+          Toast.LENGTH_SHORT
+        ).show()
       }
     })
   }
@@ -123,6 +136,12 @@ class MainActivity : AppCompatActivity() {
     repoList.isVisible = true
     val adapter = RepositoryAdapter(list)
     repoList.adapter = adapter
+    adapter.shareRepositoryLink = { urlRepository ->
+      shareRepositoryLink(urlRepository)
+    }
+    adapter.openBrowser = { urlRepository ->
+      openBrowser(urlRepository)
+    }
   }
 
   fun emptyState() {
@@ -132,10 +151,7 @@ class MainActivity : AppCompatActivity() {
     txtNoConnection.isVisible = true
   }
 
-
-  // Metodo responsavel por compartilhar o link do repositorio selecionado
-  // @Todo 11 - Colocar esse metodo no click do share item do adapter
-  fun shareRepositoryLink(urlRepository: String) {
+  private fun shareRepositoryLink(urlRepository: String) {
     val sendIntent: Intent = Intent().apply {
       action = Intent.ACTION_SEND
       putExtra(Intent.EXTRA_TEXT, urlRepository)
@@ -146,17 +162,16 @@ class MainActivity : AppCompatActivity() {
     startActivity(shareIntent)
   }
 
-  // Metodo responsavel por abrir o browser com o link informado do repositorio
-
-  // @Todo 12 - Colocar esse metodo no click item do adapter
-  fun openBrowser(urlRepository: String) {
+  private fun openBrowser(urlRepository: String) {
     startActivity(
       Intent(
         Intent.ACTION_VIEW,
         Uri.parse(urlRepository)
       )
     )
-
   }
 
+  companion object {
+    const val blankString: String = ""
+  }
 }

@@ -5,4 +5,5 @@
   <string name="confirm">Confirmar</string>
   <string name="saved_name">saved_name</string>
   <string name="txt_no_connection">No Connection</string>
+  <string name="txt_dont_find">Não foi possível encontrar o repositório</string>
 </resources>
